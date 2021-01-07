@@ -20,45 +20,7 @@ ID_list = np.array(concat_3dhst['FIELD'].str.decode("utf-8").str.rstrip() + conc
 df = pd.DataFrame(concat_3dhst)
 
 ID_ = df.set_index(concat_3dhst['FIELD'].str.decode("utf-8").str.rstrip() + concat_3dhst['ID_1'].astype(str).str.pad(6, side='left', fillchar='0') + concat_3dhst['CAT'].str.decode("utf-8"))
-"""
-filt_list = []
-if 'CDFS-HST' in str(object):
-    filter_curves=load_filter_files(cdfs_hst_filt)
 
-    #filt_list.append(cdfs_hst_filt)
-    eff_wavs = calc_eff_wavs(filter_curves)
-elif 'CDFS-GROUND' in str(object):
-    filter_curves = load_filter_files(cdfs_ground_filt)
-
-    eff_wavs = calc_eff_wavs(filter_curves)
-elif 'UDS-HST' in str(object):
-    filter_curves = load_filter_files(uds_hst_filt)
-
-    eff_wavs = calc_eff_wavs(filter_curves)
-else:
-    filter_curves = load_filter_files(uds_ground_filt)
-    eff_wavs = calc_eff_wavs(filter_curves)
-#print(filt_list)
-
-def load_filter_files(filter_list):
-    filter_curves = []
-
-    for filter in filter_list:
-        filter_curves.append(np.loadtxt(str(filter)))
-
-    return filter_curves
-
-#print(self.filter_curves)
-def calc_eff_wavs(filter_curves):
-    eff_wavs = []
-
-    for f in filter_curves:
-        flux_filter = f[:,1]/np.max(f[:,1])
-        wav_filter = f[:,0]
-        eff_wavs.append(np.sum(wav_filter*flux_filter)/np.sum(flux_filter))
-
-    return eff_wavs
-"""
 def stacks_phot(objects_list):
 
     new_wavs = np.arange(2400, 4200, 2.5)
@@ -179,7 +141,7 @@ def stacks_phot(objects_list):
         median_phot[n] = np.nanmedian(phot_)
 
 
-    med_spec_units = median_spec*med_new #normalisations both the same 
+    med_spec_units = median_spec*med_new #normalisations both the same
     med_phot_units = median_phot*med_new
 
     phot_stack_error = phot_errs/np.sqrt(len(objects_list))
