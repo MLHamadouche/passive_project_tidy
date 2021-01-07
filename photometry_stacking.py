@@ -179,7 +179,7 @@ def stacks_phot(objects_list):
         median_phot[n] = np.nanmedian(phot_)
 
 
-    med_spec_units = median_spec*med_new #test removing normalisations to see fluxes nh
+    med_spec_units = median_spec*med_new #normalisations both the same 
     med_phot_units = median_phot*med_new
 
     phot_stack_error = phot_errs/np.sqrt(len(objects_list))
