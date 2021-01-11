@@ -75,39 +75,49 @@ def find_file(ID, extension):
         return new_path, new_pre, flux_errs, flux, new_ID
 
 #'CDFS_GROUND000013'
-#path, prefix, flux_errs, flux, new_ID = find_file('UDS-HST021385SELECT', 'fits')
-#'CDFS_HST034930'
+#path, prefix, flux_errs, flux, new_ID = find_file('CDFS-HST034930SELECT', 'fits')
+#'CDFS-HST034930SELECT'
+#'UDS-HST021385SELECT'
 #print(f'path:{ path}\nprefix:{prefix}\n flux: {flux}\n flux_errs: {flux_errs}')
 
 def load_vandels(object):
     path, prefix, flux_errs, flux_cols, new_ID = find_file(object, 'fits')
     #print(new_ID)
     #print('path', path)
+    #print(flux_cols.type)
     cat_file = Table.read(path).to_pandas()
     catalog = pd.DataFrame(cat_file)
 
     ind = catalog.set_index(str(prefix) + catalog['ID'].astype(str).str.pad(6, side="left", fillchar="0") + catalog['CAT'].str.decode("utf-8"))
     #print(iso)
+
     if 'isofactor' in catalog.columns:
         iso = ind.loc[object, 'isofactor']
         #print('GROUND CATALOGUES')
         if 'CDFS' in object:
             offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_ground.txt")
+
+
         else:
-            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_uds_ground.txt")
+            offset= np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_uds_ground.txt")
+
 
         fluxes = (ind.loc[object,flux_cols]*iso).astype(float)
         fluxerrs=ind.loc[object, flux_errs].astype(float)
+
         photometry = np.c_[fluxes,fluxerrs]
         photometry[:,0] *= offset
     else:
         #print('HST CATALOGUES')
         if 'UDS' in object:
             offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_uds_hst.txt")
-        else:
-            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_hst.txt")
 
-        fluxes = ind.loc[object,flux_cols].values.astype(float)
+        else:
+            offset= np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_hst.txt")
+
+
+        fluxes = ind.loc[object, flux_cols].values.astype(float)
+
         fluxerrs=ind.loc[object, flux_errs].values.astype(float)
         photometry = np.c_[fluxes,fluxerrs]
         photometry[:,0] *= offset
@@ -129,6 +139,80 @@ def load_vandels(object):
     return photometry
 
 
+def load_vandels_stacks(object):
+    path, prefix, flux_errs, flux_cols, new_ID = find_file(object, 'fits')
+    #print(new_ID)
+    #print('path', path)
+    #print(flux_cols.type)
+    cat_file = Table.read(path).to_pandas()
+    catalog = pd.DataFrame(cat_file)
+
+    ind = catalog.set_index(str(prefix) + catalog['ID'].astype(str).str.pad(6, side="left", fillchar="0") + catalog['CAT'].str.decode("utf-8"))
+    #print(iso)
+    #print(flux_cols)
+    if 'CDFS' in object:
+
+        if 'isofactor' in catalog.columns:
+            cdfs_cols = [0,1,5,8,11,12,14,15,16,17,18,19]
+            iso = ind.loc[object, 'isofactor']
+
+            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_ground.txt")
+        else:
+            cdfs_cols = [0,1,2,2,3,5,7,8,9,11,12,13]
+            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_hst.txt")
+            iso = 1.
+
+        stack_flux = [flux_cols[cd] for cd in cdfs_cols]
+        stack_errs = [flux_errs[cdfs] for cdfs in cdfs_cols]
+        #print(stack_flux, len(stack_flux))
+        fluxes = (ind.loc[object,stack_flux]*iso).astype(float)
+        fluxerrs = ind.loc[object, stack_errs].astype(float)
+
+        photometry = np.c_[fluxes,fluxerrs]
+        photometry[:,0] *= [offset[s] for s in cdfs_cols]
+
+    elif 'UDS' in object:
+        #print(flux_cols)
+
+        if 'isofactor' in catalog.columns:
+            cols = [0,1,2,3,4,6,8,9,10,11,12,13]
+            iso = ind.loc[object, 'isofactor']
+            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_uds_ground.txt")
+
+        else:
+            cols = [0,1,3,4,5,7,8,10,12,13,15,16]
+            offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_uds_hst.txt")
+            iso = 1.
+        stack_flux = [flux_cols[con] for con in cols]
+        stack_errs = [flux_errs[co] for co in cols]
+        #print(offset)
+        fluxes = (ind.loc[object,stack_flux]*iso).values.astype(float)
+        fluxerrs = ind.loc[object, stack_errs].values.astype(float)
+
+        photometry = np.c_[fluxes,fluxerrs]
+        photometry[:,0] *= [offset[o] for o in cols]
+
+
+    for i in range(len(photometry)):
+        if (photometry[i, 0] == 0.) or (photometry[i, 1] <= 0):
+            photometry[i,:] = [0., 9.9*10**99.]
+
+    for i in range(len(photometry)):
+        if i < 10:
+            max_snr = 20.
+
+        else:
+            max_snr = 10.
+
+        if photometry[i, 0]/photometry[i, 1] > max_snr:
+            photometry[i, 1] = photometry[i, 0]/max_snr
+
+    return photometry
+
+#print(load_vandels_stacks('CDFS-HST034908SELECT'))
+#print(load_vandels_stacks('UDS-HST021385SELECT'))
+#print(load_vandels_stacks('UDS-GROUND199858SELECT'))
+print(load_vandels_stacks('CDFS-GROUND247244SELECT'))
 
 def load_vandels_spectra(ID_no):
     pre = ID_no.split('-')[0]

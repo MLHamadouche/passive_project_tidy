@@ -6,6 +6,7 @@ import spectres
 import load_data as ld
 
 
+
 uds_hst_filt =  np.loadtxt("../passive_project/catalogs/UDS_HST_filt_list.txt", dtype="str")
 uds_ground_filt = np.loadtxt("../passive_project/catalogs/UDS_GROUND_filt_list.txt", dtype = "str")
 cdfs_ground_filt = np.loadtxt("../passive_project/catalogs/CDFS_GROUND_filt_list.txt", dtype="str")
@@ -21,26 +22,29 @@ df = pd.DataFrame(concat_3dhst)
 
 ID_ = df.set_index(concat_3dhst['FIELD'].str.decode("utf-8").str.rstrip() + concat_3dhst['ID_1'].astype(str).str.pad(6, side='left', fillchar='0') + concat_3dhst['CAT'].str.decode("utf-8"))
 
+
+#for photometrt, need to use only the 12 filters UVBRizYJHK+CH1CH2
+
 def stacks_phot(objects_list):
 
     new_wavs = np.arange(2400, 4200, 2.5)
 
     #for photometry stacking
-    new_phot = np.zeros(17)
-    new_phot_errs = np.zeros(17)
+    #new_phot = np.zeros(17)
+    #new_phot_errs = np.zeros(17)
 
     #old_phot_flux = []
     #old_phot_errs = []
 
-    phot = np.zeros(len(objects_list))
-    phot_err = np.zeros(len(objects_list))
+    phot = []#np.zeros((12,len(objects_list)))
+    phot_err = []#np.zeros((12,len(objects_list)))
     med_norm = []
     med_phot_units  = []
 
-    median_phot = np.zeros(17)
-    errs = np.zeros(17)
-    phot_ = np.zeros(17)
-    phot_errs = np.zeros(17)
+    median_phot = np.zeros(12)
+    errs = np.zeros(12)
+    phot_ = np.zeros(12)
+    phot_errs = np.zeros(12)
 
     #med_photometry=np.zeros(len(new_wavs))
 
@@ -66,8 +70,6 @@ def stacks_phot(objects_list):
     for ID in objects_list:
         #print(id)
         z = ID_.loc[ID, 'zspec']
-
-
         #spectrum stuff
         spectrum = ld.load_vandels_spectra(ID)
         wav_mask = (spectrum[:,0]>5200) & (spectrum[:,0]<9250) #cut out the noisy parts of the spectra
@@ -82,49 +84,47 @@ def stacks_phot(objects_list):
         mask =  (rest_wavs > 3000) & (rest_wavs < 3500) # fairly featureless region of spectrum
         old_spec = flux/np.nanmedian(flux[mask]) #normalisation median from that region
         old_errs = flux_errs/np.nanmedian(flux[mask])
-        print(old_spec.dtype)
+        #print(old_spec.dtype)
         #photometry stuff
-        photometry = ld.load_vandels(ID)
+        photometry = ld.load_vandels_stacks(ID)
+        #print(ID)
         phot_flux = photometry[:,0]
-        #print(phot_flux)
         #input()
-        print('len(phot_flux)', len(phot_flux))
+        #print('len(phot_flux)', len(phot_flux))
         phot_flux_errors = photometry[:,1]
         zeros_mask = (phot_flux == 0.)|(phot_flux_errors == 0.)
         phot_flux[zeros_mask] = np.nan
         phot_flux_errors[zeros_mask] = np.nan
         old_phot_flux = phot_flux/np.nanmedian(flux[mask])
         old_phot_errs = phot_flux_errors/np.nanmedian(flux[mask])
-        print('len(old_phot_flux)', len(old_phot_flux))
-        print(old_phot_flux.dtype)
-        new_phot = old_phot_flux
-        new_phot_errs = old_phot_errs
-        #print(new_phot.dtype)
-        #print(new_phot.shape)
+        #print('len(old_phot_flux)', len(old_phot_flux))
 
         #print('len(new_phot_flux)', len(new_phot))
         med_norm.append(np.nanmedian(flux[mask]))
         new_spec, new_errs = spectres.spectres(new_wavs, rest_wavs, old_spec, spec_errs=old_errs)
         #print(new_spec.dtype)
         #print(new_spec.shape)
-
-        phot = new_phot
-        phot_err = new_phot_errs
+        phot.append(old_phot_flux)
+        phot_err.append(old_phot_errs)
 
         spec.append(new_spec)
         spec_err.append(new_errs)
-    #print(spec.type)
-    print('len(new_phot)', len(new_phot))
+
     #tranpose the photometry fluxes so theyre the same shape as the spectrum ones
-    #phot = np.transpose(phot)
-    #phot_err = np.transpose(phot_err)
-    print('phot shape', phot.shape)
-    input()
+    phot = np.transpose(phot)
+    phot_err = np.transpose(phot_err)
+    #print('phot shape', phot.shape)
+    #print(f'phot = {phot}')
+    #print(f'med_norm = {med_norm}')
+    #input()
     spec = np.transpose(spec)
+    #print(f'spec = {spec}')
+    #input()
     spec_err = np.transpose(spec_err)
     standev_err = np.zeros(len(new_wavs))
     med_new = np.nanmedian(med_norm)
-    print('spec shape',spec.shape)
+    standev_phot_errs = np.zeros(len(photometry[:,0]))
+    #print(f'med_new = {med_new}')
     for m in range(len(new_wavs)):
         spec_ = spec[m,:]
         spec_errs = spec_err[m,:]
@@ -133,23 +133,26 @@ def stacks_phot(objects_list):
         #print(standev_err[m])
         median_spec[m]=np.nanmedian(spec_)
 
-    for n in range(17):
-        #print(new_phot[n])
-        phot_ = new_phot[n]
-        phot_errs[n] = (np.nanstd(phot_, axis=0)*1.25)
-        print(phot_errs[n])
+    for n in range(len(photometry[:,0])): #number of photometry points = number of filters
+        phot_ = phot[n,:]
+        #print(phot_)
+        standev_phot_errs[n] = (np.nanstd(phot_, axis=0)*1.25)
+        #print(phot_errs[n])
         median_phot[n] = np.nanmedian(phot_)
-
 
     med_spec_units = median_spec*med_new #normalisations both the same
     med_phot_units = median_phot*med_new
 
-    phot_stack_error = phot_errs/np.sqrt(len(objects_list))
+    phot_stack_error = standev_phot_errs/np.sqrt(len(objects_list))
     spec_stack_error = standev_err/np.sqrt(len(objects_list))
-
-    stacked_spectrum = med_spec_units, spec_stack_error
-    stacked_photometry = med_phot_units, phot_stack_error
+    #print(f'spec stack err = {spec_stack_error} \n spec stack = {med_spec_units}')
+    #print(f'phot stack err = {phot_stack_error}')
+    stacked_spectrum = med_spec_units, spec_stack_error*med_new
+    stacked_photometry = med_phot_units, phot_stack_error*med_new
 
     return stacked_spectrum, stacked_photometry
+
+print(ID_list[0:10])
 stacked_spec, stack_phot = stacks_phot(ID_list[0:10])
-print(stack_phot)
+
+print(stacked_spec,'\n', stack_phot)
