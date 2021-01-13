@@ -125,6 +125,7 @@ def stacks_phot(objects_list):
     med_new = np.nanmedian(med_norm)
     standev_phot_errs = np.zeros(len(photometry[:,0]))
     #print(f'med_new = {med_new}')
+    print('stacking median spectra')
     for m in range(len(new_wavs)):
         spec_ = spec[m,:]
         spec_errs = spec_err[m,:]
@@ -132,7 +133,7 @@ def stacks_phot(objects_list):
         #stack_error[m] = standev_err[m]/np.sqrt(len(spec))
         #print(standev_err[m])
         median_spec[m]=np.nanmedian(spec_)
-
+    print('stacking median photometry')
     for n in range(len(photometry[:,0])): #number of photometry points = number of filters
         phot_ = phot[n,:]
         #print(phot_)
@@ -156,3 +157,13 @@ print(ID_list[0:10])
 stacked_spec, stack_phot = stacks_phot(ID_list[0:10])
 
 print(stacked_spec,'\n', stack_phot)
+eff_wavs = [ 3731.62130113,  4328.7247591,   5959.65935111,  7704.8374697,
+  8084.3513428,   9049.08564392,  10585.0870973,
+ 12516.25874447, 15391.40826974,  21576.74743872,
+ 35572.60461226, 45048.50974132] #from the SED code cdfs hst filters minus two but i cant remember which ones - only testing tho
+import matplotlib.pyplot as plt
+fig,ax = plt.subplots(figsize = [12,5])
+
+ax.fill_between(eff_wavs, y1 = stack_phot[0]- stack_phot[1], y2 = stack_phot[0]+ stack_phot[1], facecolor='lightblue')
+ax.scatter(eff_wavs, stack_phot[0])
+plt.savefig('test_phot_stack_errors.pdf')

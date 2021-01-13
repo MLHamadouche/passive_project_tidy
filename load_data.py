@@ -161,11 +161,17 @@ def load_vandels_stacks(object):
             cdfs_cols = [0,1,2,2,3,5,7,8,9,11,12,13]
             offset = np.loadtxt("/Users/PhDStuff/passive_project/vandels/offsets_cdfs_hst.txt")
             iso = 1.
+        #if flux_cols[cd] == flux_cols[cd-1], flux_cols[cd]=0.5*(flux_cols[2]+flux_cols[3])
+
 
         stack_flux = [flux_cols[cd] for cd in cdfs_cols]
         stack_errs = [flux_errs[cdfs] for cdfs in cdfs_cols]
-        #print(stack_flux, len(stack_flux))
+        print(stack_flux, len(stack_flux))
+
+
         fluxes = (ind.loc[object,stack_flux]*iso).astype(float)
+
+        fluxes[3] = 0.5*(fluxes[2]+fluxes[4]) #for R flux cdfs cols - column name is still F606W so need to change it doesnt matter tho
         fluxerrs = ind.loc[object, stack_errs].astype(float)
 
         photometry = np.c_[fluxes,fluxerrs]
@@ -209,10 +215,10 @@ def load_vandels_stacks(object):
 
     return photometry
 
-#print(load_vandels_stacks('CDFS-HST034908SELECT'))
+print(load_vandels_stacks('CDFS-HST034908SELECT'))
 #print(load_vandels_stacks('UDS-HST021385SELECT'))
 #print(load_vandels_stacks('UDS-GROUND199858SELECT'))
-print(load_vandels_stacks('CDFS-GROUND247244SELECT'))
+#print(load_vandels_stacks('CDFS-GROUND247244SELECT'))
 
 def load_vandels_spectra(ID_no):
     pre = ID_no.split('-')[0]
