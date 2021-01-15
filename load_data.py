@@ -166,7 +166,7 @@ def load_vandels_stacks(object):
 
         stack_flux = [flux_cols[cd] for cd in cdfs_cols]
         stack_errs = [flux_errs[cdfs] for cdfs in cdfs_cols]
-        print(stack_flux, len(stack_flux))
+        #print(stack_flux, len(stack_flux))
 
 
         fluxes = (ind.loc[object,stack_flux]*iso).astype(float)
@@ -215,7 +215,7 @@ def load_vandels_stacks(object):
 
     return photometry
 
-print(load_vandels_stacks('CDFS-HST034908SELECT'))
+#print(load_vandels_stacks('CDFS-HST034908SELECT'))
 #print(load_vandels_stacks('UDS-HST021385SELECT'))
 #print(load_vandels_stacks('UDS-GROUND199858SELECT'))
 #print(load_vandels_stacks('CDFS-GROUND247244SELECT'))

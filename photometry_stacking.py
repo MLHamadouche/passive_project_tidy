@@ -30,11 +30,6 @@ def stacks_phot(objects_list):
     new_wavs = np.arange(2400, 4200, 2.5)
 
     #for photometry stacking
-    #new_phot = np.zeros(17)
-    #new_phot_errs = np.zeros(17)
-
-    #old_phot_flux = []
-    #old_phot_errs = []
 
     phot = []#np.zeros((12,len(objects_list)))
     phot_err = []#np.zeros((12,len(objects_list)))
@@ -113,19 +108,15 @@ def stacks_phot(objects_list):
     #tranpose the photometry fluxes so theyre the same shape as the spectrum ones
     phot = np.transpose(phot)
     phot_err = np.transpose(phot_err)
-    #print('phot shape', phot.shape)
-    #print(f'phot = {phot}')
-    #print(f'med_norm = {med_norm}')
-    #input()
+    standev_phot_errs = np.zeros(len(photometry[:,0]))
+
     spec = np.transpose(spec)
-    #print(f'spec = {spec}')
-    #input()
     spec_err = np.transpose(spec_err)
     standev_err = np.zeros(len(new_wavs))
     med_new = np.nanmedian(med_norm)
-    standev_phot_errs = np.zeros(len(photometry[:,0]))
+    #print(spec.shape)
     #print(f'med_new = {med_new}')
-    print('stacking median spectra')
+    #print('stacking median spectra')
     for m in range(len(new_wavs)):
         spec_ = spec[m,:]
         spec_errs = spec_err[m,:]
@@ -133,6 +124,7 @@ def stacks_phot(objects_list):
         #stack_error[m] = standev_err[m]/np.sqrt(len(spec))
         #print(standev_err[m])
         median_spec[m]=np.nanmedian(spec_)
+
     print('stacking median photometry')
     for n in range(len(photometry[:,0])): #number of photometry points = number of filters
         phot_ = phot[n,:]
@@ -146,13 +138,12 @@ def stacks_phot(objects_list):
 
     phot_stack_error = standev_phot_errs/np.sqrt(len(objects_list))
     spec_stack_error = standev_err/np.sqrt(len(objects_list))
-    #print(f'spec stack err = {spec_stack_error} \n spec stack = {med_spec_units}')
-    #print(f'phot stack err = {phot_stack_error}')
+
     stacked_spectrum = med_spec_units, spec_stack_error*med_new
     stacked_photometry = med_phot_units, phot_stack_error*med_new
 
     return stacked_spectrum, stacked_photometry
-
+"""
 print(ID_list[0:10])
 stacked_spec, stack_phot = stacks_phot(ID_list[0:10])
 
@@ -163,7 +154,15 @@ eff_wavs = [ 3731.62130113,  4328.7247591,   5959.65935111,  7704.8374697,
  35572.60461226, 45048.50974132] #from the SED code cdfs hst filters minus two but i cant remember which ones - only testing tho
 import matplotlib.pyplot as plt
 fig,ax = plt.subplots(figsize = [12,5])
-
-ax.fill_between(eff_wavs, y1 = stack_phot[0]- stack_phot[1], y2 = stack_phot[0]+ stack_phot[1], facecolor='lightblue')
+for i in ID_list[0:10]:
+    photometry = ld.load_vandels_stacks(i)
+    ax.scatter(eff_wavs, photometry[:,0], color = 'black')
+ax.fill_between(eff_wavs, y1 = stack_phot[0]- stack_phot[1], y2 = stack_phot[0]+ stack_phot[1], facecolor='lightblue', label = 'median photometry stack')
 ax.scatter(eff_wavs, stack_phot[0])
-plt.savefig('test_phot_stack_errors.pdf')
+ax.set_ylabel('Flux')
+ax.set_xlabel('Wavelength ($\\AA$)')
+ax.set_ylim(-2,30)
+plt.legend()
+plt.savefig('test_phot_stack_errors_dispersion.pdf')
+
+"""

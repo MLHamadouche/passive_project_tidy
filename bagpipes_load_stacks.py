@@ -115,7 +115,7 @@ def stack_lims(lower_lim, higher_lim):
 
     return stacking_4_above, stacking_errors_above, IDs_above, stacking_4_below, stacking_errors_below, IDs_below, np.median(stricter_masses)
 
-stacking_4_above, stacking_errors_above, IDs_above, stacking_4_below, stacking_errors_below, IDs_below, med_mass = stack_lims(10.5, 10.75)
+#stacking_4_above, stacking_errors_above, IDs_above, stacking_4_below, stacking_errors_below, IDs_below, med_mass = stack_lims(10.5, 10.75)
 
 #print(IDs_above)
 flux, error = stacking_4_above, stacking_errors_above
@@ -152,7 +152,7 @@ def load_stacked_spectrum(id):
 
     return spectrum
 
-
+"""
 galaxy = pipes.galaxy('0001', load_data =load_stacked_spectrum, photometry_exists=False, spectrum_exists = True)
 #galaxy.plot()
 
@@ -174,7 +174,8 @@ fig = fit.plot_calibration(save=True, show=False)
 fig = fit.plot_sfh_posterior(save=True, show=False)
 fig = fit.plot_corner(save=True, show=False)
 
-
+"""
+"""
 stacking_4_above2, stacking_errors_above2, IDs_above2, stacking_4_below2, stacking_errors_below2, IDs_below2, med_mass2 = stack_lims(10.75, 11.0)
 
 #print(IDs_above)
@@ -340,3 +341,4 @@ ax2.set_ylabel('mass weighted age (from fit)')
 plt.legend()
 plt.savefig('test_agevmass.pdf')
 plt.close()
+"""
