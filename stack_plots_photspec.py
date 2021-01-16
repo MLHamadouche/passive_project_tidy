@@ -86,37 +86,64 @@ def plot_stacks_single(spec_stack_above, spec_stack_below, len_ID_sa, len_ID_sb,
     plt.rc('font', family='serif')
     plt.rc('xtick', labelsize='medium')
     plt.rc('ytick', labelsize='medium')
-    fig, (ax1, ax2) = plt.subplots(2, figsize = [16,10], gridspec_kw={'hspace': 0.3})
-    fig.suptitle('Photometry and spectroscopy median stacks: 10.3 $<$ log$_{10}$(M*) $<$ 11.3', size = 20)#plt.figure(figsize=(20,8))
-    ax1.plot(new_wavs, spec_stack_above*10**18, color="r", lw=2., ls ='-', label = f' Above van der Wel relation (N = {len_ID_sa})' )
-    ax1.plot(new_wavs, spec_stack_below*10**18, color="k", lw=2., label = f' Below van der Wel relation (N = {len_ID_sb})')
-
+    fig, (ax1, ax2) = plt.subplots(2, figsize = [18,12], gridspec_kw={'hspace': 0.25})
+    fig.suptitle('Photometry and spectroscopy median stacks: 11.0 $<$ log$_{10}$(M*) $<$ 11.3', size = 20)#plt.figure(figsize=(20,8))
+    ax1.plot(new_wavs, spec_stack_above[0]*10**18, color="#75446A", lw=1., ls ='-', label = f' Above van der Wel relation (N = {len_ID_sa})' )
+    ax1.plot(new_wavs, spec_stack_below[0]*10**18, color="#44754F", lw=1., label = f' Below van der Wel relation (N = {len_ID_sb})')
+    ax1.fill_between(new_wavs, y1 = spec_stack_above[0]*10**18 - spec_stack_above[1]*10**18, y2 = spec_stack_above[0]*10**18 + spec_stack_above[1]*10**18, facecolor='#75446A', alpha = 0.5)
+    ax1.fill_between(new_wavs, y1 = spec_stack_below[0]*10**18 - spec_stack_below[1]*10**18, y2 = spec_stack_below[0]*10**18 + spec_stack_below[1]*10**18, facecolor='#44754F', alpha = 0.5)
     ax1.set_xlabel("Wavelength ($\mathrm{\AA}$)", size=12)
     ax1.set_ylabel("Flux $(10^{-18}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
     ax1.set_xlim(2350, 4240)
-    ax1.legend(fontsize=10)
+    ax1.legend(fontsize=10, loc = 'upper left')
     ax1.set_title(r'Median spectroscopy stacks', size = 15)# excluding possible AGN (CDFS + UDS)')
 
-    ax2.errorbar(np.log10(eff_wavs), phot_stack_above*10**17, phot_err_a*10**17, color="k", mfc = 'r', linestyle='none', markersize = 10,  capsize = 8,  marker = 'o', mec = 'k', label = f' Above van der Wel relation (N = {len_ID_pa})') #change to ax.errorbar after test
-    ax2.errorbar(np.log10(eff_wavs), phot_stack_below*10**17,phot_err_b*10**17, color="k", mfc = 'k', linestyle='none', markersize = 10, capsize = 8,  marker = 'o',  mec = 'k', label = f' Below van der Wel relation (N = {len_ID_pb})')
+    ax2.errorbar(np.log10(eff_wavs), phot_stack_above*10**18, phot_err_a*10**18, color="k", mfc = '#75446A', linestyle='none', markersize = 10,  capsize = 8,  marker = 'o', mec = 'k', label = f' Above van der Wel relation (N = {len_ID_pa})') #change to ax.errorbar after test
+    ax2.errorbar(np.log10(eff_wavs), phot_stack_below*10**18,phot_err_b*10**18, color="k", mfc = '#44754F', linestyle='none', markersize = 10, capsize = 8,  marker = 'o',  mec = 'k', label = f' Below van der Wel relation (N = {len_ID_pb})')
     ax2.set_xlabel("log$_{10}(\lambda$/ $\mathrm{\AA}$)", size=14)
-    ax2.set_ylabel("Flux $(10^{-17}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
+    ax2.set_ylabel("Flux $(10^{-18}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
     #plt.xlim(2350, 4240)
     #plt.ylim(0. ,1.75)
     ax2.legend(fontsize=10, loc = 'upper left')
+    #ax2.set_xscale('log')
     ax2.set_title(r'Median photometry stacks', size = 15)# excluding possible AGN (CDFS + UDS)')
-
+    plt.subplots_adjust(top=0.92)
     plt.savefig(str(name)+'.pdf')
     plt.close()
 
 cat3 = Table.read("../passive_project/Re_cat_strict_UVJ_cut.fits").to_pandas()
 IDs = cat3['IDs']
 
-IDs_above, IDs_below = stack_ids(10.3, 11.3, cat3)
+#30504C
+#4C3050
+IDs_above, IDs_below = stack_ids(11.0, 11.3, cat3)
 
 print(IDs_above, IDs_below)
 
 spec_ab, phot_ab, med_new = ps.stacks_phot(IDs_above)
 spec_be, phot_be, med_new_b = ps.stacks_phot(IDs_below)
 
-plot_stacks_single(spec_ab[0], spec_be[0], len(IDs_above), len(IDs_below), phot_ab[0], phot_be[0],phot_ab[1], phot_be[1], len(IDs_above), len(IDs_below), 'phot_spec_test_stacks_10_3_11_3')
+
+
+"""
+fig,ax = plt.subplots(figsize = [12,5])
+
+for i in IDs_above:
+    photometry = ld.load_vandels_stacks(i)
+    ax.scatter(eff_wavs, photometry[:,0]*med_new, color = 'lightblue', )
+for j in IDs_below:
+    photometry = ld.load_vandels_stacks(j)
+    ax.scatter(eff_wavs, photometry[:,0]*med_new, color = 'bisque',)
+#ax.scatter(eff_wavs, stack_phot[0])
+#ax.fill_between(eff_wavs, y1 = phot_ab[0]- phot_ab[1], y2 = phot_ab[0]+ phot_ab[1], facecolor='lightblue', label = 'median photometry stack')
+ax.scatter(eff_wavs, phot_ab[0], color = 'darkblue', edgecolors = 'k', label = 'above')
+#ax.fill_between(eff_wavs, y1 = phot_be[0]- phot_be[1], y2 = phot_be[0]+ phot_be[1], facecolor='orange', label = 'median photometry stack')
+ax.scatter(eff_wavs, phot_be[0], color = 'darkorange', edgecolors = 'k', label = 'below')
+ax.set_ylabel('Flux')
+ax.set_xlabel('Wavelength ($\\AA$)')
+#ax.set_ylim(-2,30)
+plt.legend()
+#plt.show()
+plt.savefig('test_phot_stack_errors_dispersion_10_5.pdf')
+"""
+plot_stacks_single(spec_ab, spec_be, len(IDs_above), len(IDs_below), phot_ab[0], phot_be[0],phot_ab[1], phot_be[1], len(IDs_above), len(IDs_below), 'phot_spec_test_stacks_11_11_3_units')

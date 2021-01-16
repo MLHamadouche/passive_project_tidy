@@ -22,8 +22,45 @@ df = pd.DataFrame(concat_3dhst)
 
 ID_ = df.set_index(concat_3dhst['FIELD'].str.decode("utf-8").str.rstrip() + concat_3dhst['ID_1'].astype(str).str.pad(6, side='left', fillchar='0') + concat_3dhst['CAT'].str.decode("utf-8"))
 
+filt_list = ['/Users/PhDStuff/passive_project/vandels/cfht_U',
+       '/Users/PhDStuff/passive_project/vandels/subaru_B',
+       '/Users/PhDStuff/passive_project/vandels/subaru_V',
+       '/Users/PhDStuff/passive_project/vandels/subaru_R',
+       '/Users/PhDStuff/passive_project/vandels/subaru_i',
+       '/Users/PhDStuff/passive_project/vandels/subaru_newz',
+       '/Users/PhDStuff/passive_project/vandels/vista_Y',
+       '/Users/PhDStuff/passive_project/vandels/wfcam_J',
+       '/Users/PhDStuff/passive_project/vandels/wfcam_H',
+       '/Users/PhDStuff/passive_project/vandels/wfcam_K',
+       '/Users/PhDStuff/passive_project/vandels/IRAC1',
+       '/Users/PhDStuff/passive_project/vandels/IRAC2']
+
+def load_filter_files(filter_list):
+    filter_curves = []
+
+    for filter in filter_list:
+        filter_curves.append(np.loadtxt(str(filter)))
+
+    return filter_curves
+filt_curves = load_filter_files(filt_list)
+#print(self.filter_curves)
+def calc_eff_wavs(filter_curves):
+    eff_wavs = []
+
+    for f in filter_curves:
+        flux_filter = f[:,1]/np.max(f[:,1])
+        wav_filter = f[:,0]
+        eff_wavs.append(np.sum(wav_filter*flux_filter)/np.sum(flux_filter))
+
+    return eff_wavs
+
+eff_wavs = calc_eff_wavs(filt_curves)
 
 #for photometrt, need to use only the 12 filters UVBRizYJHK+CH1CH2
+#eff_wavs = [ 3731.62130113,  4328.7247591,   5959.65935111,  7704.8374697,
+ # 8084.3513428,   9049.08564392,  10585.0870973,
+ #12516.25874447, 15391.40826974,  21576.74743872,
+ #35572.60461226, 45048.50974132]
 
 def stacks_phot(objects_list):
 
@@ -84,17 +121,19 @@ def stacks_phot(objects_list):
         #print(old_spec, old_errs)
         #photometry stuff
         photometry = ld.load_vandels_stacks(ID)
-        #print(ID)
-        phot_flux = photometry[:,0]
+        conversion = 10**-29*2.9979*10**18/np.array(eff_wavs)**2
+        converted_fluxes = photometry[:, 0] * conversion
+        converted_errors = photometry[:, 1] * conversion
+        phot_flux = converted_fluxes#photometry[:,0]
         #input()
         #print('phot_flux', phot_flux)
         #input()
-        phot_flux_errors = photometry[:,1]
+        phot_flux_errors = converted_errors#photometry[:,1]
         zeros_mask = (phot_flux == 0.)|(phot_flux_errors == 0.)
         phot_flux[zeros_mask] = np.nan
         phot_flux_errors[zeros_mask] = np.nan
-        old_phot_flux = phot_flux#/np.nanmedian(flux[mask])
-        old_phot_errs = phot_flux_errors#/np.nanmedian(flux[mask])
+        old_phot_flux = phot_flux/np.nanmedian(flux[mask])
+        old_phot_errs = phot_flux_errors/np.nanmedian(flux[mask])
         #print('len(old_phot_flux)', len(old_phot_flux))
 
         #print('len(new_phot_flux)', len(new_phot))
@@ -152,21 +191,22 @@ stacked_spec, stack_phot, med_new = stacks_phot(ID_list[0:10])
 
 print(stacked_spec,'\n', stack_phot)
 
-eff_wavs = [ 3731.62130113,  4328.7247591,   5959.65935111,  7704.8374697,
-  8084.3513428,   9049.08564392,  10585.0870973,
- 12516.25874447, 15391.40826974,  21576.74743872,
- 35572.60461226, 45048.50974132] #from the SED code cdfs hst filters minus two but i cant remember which ones - only testing tho
+ #from the SED code cdfs hst filters minus two but i cant remember which ones - only testing tho
 import matplotlib.pyplot as plt
-fig,ax = plt.subplots(figsize = [12,5])
+fig,ax = plt.subplots(figsize = [12,8])
+"""
+"""
 for i in ID_list[0:10]:
     photometry = ld.load_vandels_stacks(i)
     ax.scatter(eff_wavs, photometry[:,0]*med_new, color = 'black')
+"""
+"""
 ax.fill_between(eff_wavs, y1 = stack_phot[0]- stack_phot[1], y2 = stack_phot[0]+ stack_phot[1], facecolor='lightblue', label = 'median photometry stack')
 ax.scatter(eff_wavs, stack_phot[0])
 ax.set_ylabel('Flux')
 ax.set_xlabel('Wavelength ($\\AA$)')
 #ax.set_ylim(-2,30)
 plt.legend()
-#plt.show()
-plt.savefig('test2_phot_stack_errors_dispersion.pdf')
+plt.show()
 """
+#plt.savefig('test2_phot_stack_errors_dispersion.pdf')
