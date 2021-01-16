@@ -97,10 +97,10 @@ def plot_stacks_single(spec_stack_above, spec_stack_below, len_ID_sa, len_ID_sb,
     ax1.legend(fontsize=10)
     ax1.set_title(r'Median spectroscopy stacks', size = 15)# excluding possible AGN (CDFS + UDS)')
 
-    ax2.errorbar(np.log10(eff_wavs), phot_stack_above, phot_err_a, color="k", mfc = 'r', linestyle='none', markersize = 10,  capsize = 8,  marker = 'o', mec = 'k', label = f' Above van der Wel relation (N = {len_ID_pa})') #change to ax.errorbar after test
-    ax2.errorbar(np.log10(eff_wavs), phot_stack_below,phot_err_b, color="k", mfc = 'k', linestyle='none', markersize = 10, capsize = 8,  marker = 'o',  mec = 'k', label = f' Below van der Wel relation (N = {len_ID_pb})')
+    ax2.errorbar(np.log10(eff_wavs), phot_stack_above*10**17, phot_err_a*10**17, color="k", mfc = 'r', linestyle='none', markersize = 10,  capsize = 8,  marker = 'o', mec = 'k', label = f' Above van der Wel relation (N = {len_ID_pa})') #change to ax.errorbar after test
+    ax2.errorbar(np.log10(eff_wavs), phot_stack_below*10**17,phot_err_b*10**17, color="k", mfc = 'k', linestyle='none', markersize = 10, capsize = 8,  marker = 'o',  mec = 'k', label = f' Below van der Wel relation (N = {len_ID_pb})')
     ax2.set_xlabel("log$_{10}(\lambda$/ $\mathrm{\AA}$)", size=14)
-    ax2.set_ylabel("Flux $(10^{-18}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
+    ax2.set_ylabel("Flux $(10^{-17}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
     #plt.xlim(2350, 4240)
     #plt.ylim(0. ,1.75)
     ax2.legend(fontsize=10, loc = 'upper left')
@@ -116,7 +116,7 @@ IDs_above, IDs_below = stack_ids(10.3, 11.3, cat3)
 
 print(IDs_above, IDs_below)
 
-spec_ab, phot_ab = ps.stacks_phot(IDs_above)
-spec_be, phot_be = ps.stacks_phot(IDs_below)
+spec_ab, phot_ab, med_new = ps.stacks_phot(IDs_above)
+spec_be, phot_be, med_new_b = ps.stacks_phot(IDs_below)
 
 plot_stacks_single(spec_ab[0], spec_be[0], len(IDs_above), len(IDs_below), phot_ab[0], phot_be[0],phot_ab[1], phot_be[1], len(IDs_above), len(IDs_below), 'phot_spec_test_stacks_10_3_11_3')

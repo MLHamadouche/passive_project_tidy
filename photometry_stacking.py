@@ -67,6 +67,8 @@ def stacks_phot(objects_list):
         z = ID_.loc[ID, 'zspec']
         #spectrum stuff
         spectrum = ld.load_vandels_spectra(ID)
+        #print(spectrum)
+        #ißnput()
         wav_mask = (spectrum[:,0]>5200) & (spectrum[:,0]<9250) #cut out the noisy parts of the spectra
         flux = spectrum[:,1][wav_mask]
         flux_errs = spectrum[:,2][wav_mask]
@@ -79,19 +81,20 @@ def stacks_phot(objects_list):
         mask =  (rest_wavs > 3000) & (rest_wavs < 3500) # fairly featureless region of spectrum
         old_spec = flux/np.nanmedian(flux[mask]) #normalisation median from that region
         old_errs = flux_errs/np.nanmedian(flux[mask])
-        #print(old_spec.dtype)
+        #print(old_spec, old_errs)
         #photometry stuff
         photometry = ld.load_vandels_stacks(ID)
         #print(ID)
         phot_flux = photometry[:,0]
         #input()
-        #print('len(phot_flux)', len(phot_flux))
+        #print('phot_flux', phot_flux)
+        #input()
         phot_flux_errors = photometry[:,1]
         zeros_mask = (phot_flux == 0.)|(phot_flux_errors == 0.)
         phot_flux[zeros_mask] = np.nan
         phot_flux_errors[zeros_mask] = np.nan
-        old_phot_flux = phot_flux/np.nanmedian(flux[mask])
-        old_phot_errs = phot_flux_errors/np.nanmedian(flux[mask])
+        old_phot_flux = phot_flux#/np.nanmedian(flux[mask])
+        old_phot_errs = phot_flux_errors#/np.nanmedian(flux[mask])
         #print('len(old_phot_flux)', len(old_phot_flux))
 
         #print('len(new_phot_flux)', len(new_phot))
@@ -142,12 +145,13 @@ def stacks_phot(objects_list):
     stacked_spectrum = med_spec_units, spec_stack_error*med_new
     stacked_photometry = med_phot_units, phot_stack_error*med_new
 
-    return stacked_spectrum, stacked_photometry
+    return stacked_spectrum, stacked_photometry, med_new
 """
 print(ID_list[0:10])
-stacked_spec, stack_phot = stacks_phot(ID_list[0:10])
+stacked_spec, stack_phot, med_new = stacks_phot(ID_list[0:10])
 
 print(stacked_spec,'\n', stack_phot)
+
 eff_wavs = [ 3731.62130113,  4328.7247591,   5959.65935111,  7704.8374697,
   8084.3513428,   9049.08564392,  10585.0870973,
  12516.25874447, 15391.40826974,  21576.74743872,
@@ -156,13 +160,13 @@ import matplotlib.pyplot as plt
 fig,ax = plt.subplots(figsize = [12,5])
 for i in ID_list[0:10]:
     photometry = ld.load_vandels_stacks(i)
-    ax.scatter(eff_wavs, photometry[:,0], color = 'black')
+    ax.scatter(eff_wavs, photometry[:,0]*med_new, color = 'black')
 ax.fill_between(eff_wavs, y1 = stack_phot[0]- stack_phot[1], y2 = stack_phot[0]+ stack_phot[1], facecolor='lightblue', label = 'median photometry stack')
 ax.scatter(eff_wavs, stack_phot[0])
 ax.set_ylabel('Flux')
 ax.set_xlabel('Wavelength ($\\AA$)')
-ax.set_ylim(-2,30)
+#ax.set_ylim(-2,30)
 plt.legend()
-plt.savefig('test_phot_stack_errors_dispersion.pdf')
-
+#plt.show()
+plt.savefig('test2_phot_stack_errors_dispersion.pdf')
 """
