@@ -239,13 +239,21 @@ def load_vandels_spectra(ID_no):
             delt_wav = hdulist[0].header['CDELT1']
             wa_end = wav_first_pixel + (2154*delt_wav)
             wave = np.arange(wav_first_pixel, wa_end, delt_wav)
-            spectrum=np.c_[wave, flux, flux_err]
+            wav_mask = (wave>5200.) & (wave<9250.)
+            spectrum= np.c_[wave[wav_mask], flux[wav_mask], flux_err[wav_mask]]
 
+            #spectrum=np.c_[wave, flux, flux_err]
+
+    for i in range(len(spectrum)):
+        if (spectrum[i,1] == 0.)  or (spectrum[i, 2] <= 0.):
+            spectrum[i][1] = 0.
+            spectrum[i][2] =  np.float(9.9*10**99.)
+            #print(spectrum[i][1])
     return spectrum
 
-#test:
+#spectrum = load_vandels_spectra('UDS-HST004674SELECT')
 #print(load_vandels_spectra('UDS-HST004674SELECT'))
-
+#print(spectrum)
 
 def load_vandels_both(ID_):
     photometry = load_vandels(ID_)

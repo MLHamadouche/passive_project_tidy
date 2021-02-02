@@ -113,15 +113,17 @@ def stacks_phot(objects_list):
         zeros_mask = (flux == 0.)|(flux_errs == 0.)
         flux[zeros_mask] = np.nan
         flux_errs[zeros_mask] = np.nan
-
+        #print(flux_errs)
         rest_wavs = wavs/(1.0 + z)
         mask =  (rest_wavs > 3000) & (rest_wavs < 3500) # fairly featureless region of spectrum
         old_spec = flux/np.nanmedian(flux[mask]) #normalisation median from that region
         old_errs = flux_errs/np.nanmedian(flux[mask])
+        #print(np.nanmedian(flux[mask]))
+        #arr_mask_norm.append(np.nanmedian(flux[mask]))
         #print(old_spec, old_errs)
         #photometry stuff
         photometry = ld.load_vandels_stacks(ID)
-        conversion = 10**-29*2.9979*10**18/np.array(eff_wavs)**2
+        conversion = ((10**-29)*(2.9979*10**18))/(np.array(eff_wavs)**2)
         converted_fluxes = photometry[:, 0] * conversion
         converted_errors = photometry[:, 1] * conversion
         phot_flux = converted_fluxes#photometry[:,0]
@@ -138,6 +140,7 @@ def stacks_phot(objects_list):
 
         #print('len(new_phot_flux)', len(new_phot))
         med_norm.append(np.nanmedian(flux[mask]))
+        #print(len(med_norm))
         new_spec, new_errs = spectres.spectres(new_wavs, rest_wavs, old_spec, spec_errs=old_errs)
         #print(new_spec.dtype)
         #print(new_spec.shape)
@@ -167,24 +170,25 @@ def stacks_phot(objects_list):
         #print(standev_err[m])
         median_spec[m]=np.nanmedian(spec_)
 
-    print('stacking median photometry')
+    #print('stacking median photometry')
     for n in range(len(photometry[:,0])): #number of photometry points = number of filters
         phot_ = phot[n,:]
         #print(phot_)
-        standev_phot_errs[n] = (np.nanstd(phot_, axis=0)*1.25)
+        standev_phot_errs[n] = (np.nanstd(phot_, axis=0)*1.25) #standard deviation of the sample median is 1.25 * standard dev of sample mean (σ/sqrt(N))
         #print(phot_errs[n])
         median_phot[n] = np.nanmedian(phot_)
 
-    med_spec_units = median_spec*med_new #normalisations both the same
-    med_phot_units = median_phot*med_new
+    med_spec_units = (median_spec*med_new) #normalisations both the same
+    med_phot_units = (median_phot*med_new)
 
     phot_stack_error = standev_phot_errs/np.sqrt(len(objects_list))
     spec_stack_error = standev_err/np.sqrt(len(objects_list))
 
-    stacked_spectrum = med_spec_units, spec_stack_error*med_new
-    stacked_photometry = med_phot_units, phot_stack_error*med_new
+    stacked_spectrum = med_spec_units, (spec_stack_error*med_new)
+    stacked_photometry = med_phot_units, (phot_stack_error*med_new)
 
-    return stacked_spectrum, stacked_photometry, med_new
+    return stacked_spectrum, stacked_photometry, med_new, med_norm
+
 """
 print(ID_list[0:10])
 stacked_spec, stack_phot, med_new = stacks_phot(ID_list[0:10])
