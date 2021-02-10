@@ -7,6 +7,7 @@ import os
 import re
 from collections import OrderedDict
 from glob import glob
+import time
 """
 This file contains functions for use in bagpipes, and my own codes to load photometry and spectra for list of IDs.
 load_vandels is the function which loads the photometry as a 2D array of 2 columns of fluxes and flux errors.
@@ -226,6 +227,7 @@ def load_vandels_spectra(ID_no):
     new_ID = re.search('\d+', ID_no).group()
     #ID = ID.lstrip('0')
     ID_new = str(pre) + str(new_ID)
+
     globpath = os.path.join('../passive_project/new_vandels_spec/', '*.fits')
     filelist = glob(globpath)
     #print(filelist)
@@ -267,52 +269,51 @@ def load_vandels_both(ID_):
 
 
 
-def load_legac_spec(IDs):
-
+def load_legac_spec(ID):
         lega_c_catalog = Table.read("legac_dr2_cat.fits").to_pandas()
-
         df = pd.DataFrame(lega_c_catalog)
-        df['Filename'] = df['Filename'].str.decode('utf-8')
-        #print(df)
-
         index_list = df.set_index(df['OBJECT'])
-        #print(index_list)
-        #spec_filenames = [None]*len(IDs)
-        specs = []
-        for ID in range(len(IDs)):
-            spec_files = df['Filename'][ID]
-
-            specs.append(spec_files)
+        spec_file = index_list.loc[ID, 'SPECT_ID'].values[0]
+        spec_file = spec_file.decode('utf-8')
 
         globpath1 = os.path.join('/Users/massissiliahamadouche/Downloads/spectraDR/', '*.fits')
         #print(globpath)
         filelist1 = glob(globpath1)
 
         path = '/Users/massissiliahamadouche/Downloads/spectraDR/'
-
-
-        for spec in range(len(specs)):
-            for file in filelist1:
-
-                if str(spec) in str(file):
-                    hdulist = fits.open(file)
-                    print(hdulist)
-                    flux = hdulist[0].data
-                    flux_err = hdulist[3].data
-                    redshift = hdulist[0].header['HIERARCH PND Z']
-                    wav_first_pixel = hdulist[0].header['CRVAL1']
-                    delt_wav = hdulist[0].header['CDELT1']
-                    wa_end = wav_first_pixel + (2154*delt_wav)
-                    wave = np.arange(wav_first_pixel, wa_end, delt_wav)
-                    #wav_mask = (wave>5200.) & (wave<9250.)
-                    #spectrum= np.c_[wave[wav_mask], flux[wav_mask], flux_err[wav_mask]]
-                    spectrum= np.c_[wave, flux, flux_err]
+        for j in range(len(filelist1)):
+            if path+'legac_'+str(spec_file.strip())+'_v2.0.fits' in filelist1[j]:
+                hdulist = fits.open(path+'legac_'+str(spec_file.strip())+'_v2.0.fits')
+                #print(hdulist)
+                table = Table(hdulist[1].data)
+                #print(table)
+                wavs = table['WAVE'].data[0]
+                flux = table['FLUX'].data[0]
+                flux_errs= table['ERR'].data[0]
+                spectrum= np.c_[wavs, flux, flux_errs]
 
         return spectrum
 
-#IDs = [126275, 126585, 128133, 129358, 131013, 131393, 133163, 133240, 134169, 134358,
- #139221, 140050, 205548, 206501, 206511]
+IDs = [210716]
 
+#print(globpath1)
+# glob searches through directories similar to the Unix shell
+"""
+filelist2 = glob(globpath1)
+#print(len(filelist2))
+hdulist = fits.open(filelist2[0])
+#print(hdulist[0].header)
+data = hdulist[0].header
+print(data)
+table = Table(hdulist[1].data)
+print(table)
+wavs = table['WAVE'].data[0]
+flux = table['FLUX'].data[0]
+flux_errs= table['ERR'].data[0]
+
+"""
+#start = time.time()
 #spec = load_legac_spec(IDs)
-
 #print(spec)
+#end = time.time()
+#print( end - start)
