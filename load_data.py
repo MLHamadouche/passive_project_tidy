@@ -262,10 +262,57 @@ def load_vandels_both(ID_):
     return  spectrum, photometry
 
 
-
-
-
-
-
 #test:
 #print(load_vandels_both('UDS-GROUND154207SELECT'))
+
+
+
+def load_legac_spec(IDs):
+
+        lega_c_catalog = Table.read("legac_dr2_cat.fits").to_pandas()
+
+        df = pd.DataFrame(lega_c_catalog)
+        df['Filename'] = df['Filename'].str.decode('utf-8')
+        #print(df)
+
+        index_list = df.set_index(df['OBJECT'])
+        #print(index_list)
+        #spec_filenames = [None]*len(IDs)
+        specs = []
+        for ID in range(len(IDs)):
+            spec_files = df['Filename'][ID]
+
+            specs.append(spec_files)
+
+        globpath1 = os.path.join('/Users/massissiliahamadouche/Downloads/spectraDR/', '*.fits')
+        #print(globpath)
+        filelist1 = glob(globpath1)
+
+        path = '/Users/massissiliahamadouche/Downloads/spectraDR/'
+
+
+        for spec in range(len(specs)):
+            for file in filelist1:
+
+                if str(spec) in str(file):
+                    hdulist = fits.open(file)
+                    print(hdulist)
+                    flux = hdulist[0].data
+                    flux_err = hdulist[3].data
+                    redshift = hdulist[0].header['HIERARCH PND Z']
+                    wav_first_pixel = hdulist[0].header['CRVAL1']
+                    delt_wav = hdulist[0].header['CDELT1']
+                    wa_end = wav_first_pixel + (2154*delt_wav)
+                    wave = np.arange(wav_first_pixel, wa_end, delt_wav)
+                    #wav_mask = (wave>5200.) & (wave<9250.)
+                    #spectrum= np.c_[wave[wav_mask], flux[wav_mask], flux_err[wav_mask]]
+                    spectrum= np.c_[wave, flux, flux_err]
+
+        return spectrum
+
+#IDs = [126275, 126585, 128133, 129358, 131013, 131393, 133163, 133240, 134169, 134358,
+ #139221, 140050, 205548, 206501, 206511]
+
+#spec = load_legac_spec(IDs)
+
+#print(spec)
