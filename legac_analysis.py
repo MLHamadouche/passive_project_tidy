@@ -42,8 +42,35 @@ df =df.groupby((df['fast_lmass']>10.3)).get_group(True)
 #df = df.groupby((np.log(df['lsfr_UV_IR'])<-10)).get_group(True) #S/N SN_rf_4000 > 10
 print(len(df))
 df.set_index('id')
+
+import astropy
+from astropy.cosmology import FlatLambdaCDM
+from scipy.integrate import simps
+from astropy import units as u
+
+cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+Mpc_m = 3.086*10**22 #Mpc in m
+Mpc_cm = Mpc_m*10**2 #in centimetres
+
+legac_Vc = cosmo.comoving_volume(0.7)
+vandels_Vc = ((0.2/41253))*((cosmo.comoving_volume(1.3).value) - (cosmo.comoving_volume(1).value))
+n_density_vandels = 3/vandels_Vc
+
+legac_Vc = ((1.3/41253))*((cosmo.comoving_volume(1.0).value) - (cosmo.comoving_volume(0.6).value))
+n_density_legac = 104/legac_Vc
+print(n_density_legac, n_density_vandels)
+degsq =  (6.1 *u.arcmin).to(u.deg)
+print(degsq)
+threedhst = ((degsq.value/41253))*((cosmo.comoving_volume(4).value) - (cosmo.comoving_volume(3).value))
+n_density_3dhst = 20/threedhst
+#n = 20/(0.2*(np.pi/180)**2*dist)
+print(n_density_3dhst)
+
+#print('Vc = ', str("{:.2E}".format((legac_Vc))))
+#print('Nc = ', str("{:.2E}".format((n_density))))
+
 #############
-input()
+
 
 UV = df['UV'].values
 VJ = df['VJ'].values
@@ -81,27 +108,34 @@ log_A = 0.22
 
 log_Reff = log_A + alpha*np.log10((10**x)/(5*10**10))
 
-cat3 = Table.read("../passive_project/Re_cat_strict_UVJ_cut.fits").to_pandas()
-#IDs = cat3['IDs']
+cat3 = Table.read("/Users/Important_Tables_PhD_Project/VANDELS_size_d4000.fits").to_pandas()
+IDs = cat3['IDs']
 df4 = pd.DataFrame(cat3)
-df4 = df4.groupby((df4['log10(M*/Msun)']>10.9)&(df4['log10(M*/Msun)']<=11.3)).get_group(True) #& (df4['log10(M*/Msun)']<=10.6)10.3<m<11.5 = 61 objects, 10.4<m<11.5 =55 &(df4['log10(M*/Msun)']<=11.5)
-df4  = df4.groupby((df4['redshifts']>=1.0)&(df4['redshifts']<=1.3)).get_group(True) #for mass completeness (see Adams paper)
 print(len(df4))
+#df4 = df4.groupby((df4['log10(M*/Msun)']>10.3)).get_group(True) #& (df4['log10(M*/Msun)']<=10.6)10.3<m<11.5 = 61 objects, 10.4<m<11.5 =55 &(df4['log10(M*/Msun)']<=11.5)
+#df4  = df4.groupby((df4['z_spec']>=0.96)&(df4['z_spec']<=1.3)).get_group(True) #for mass completeness (see Adams paper)
+#print(len(df4))
 
-input()
+d4000_vandels = cat3['Dn4000'].values
+for i in range(len(d4000_vandels)):
+    if d4000_vandels[i] == 0.:
+        d4000_vandels[i] = np.nan
+print(d4000_vandels)
+
 stricter_masses = df4["log10(M*/Msun)"]
 stricter_sizes= df4["Re_kpc"]
 R_e_errs_4 = df4["Re_kpc_errs"]
-redshifts_4 = df4['redshifts']
+redshifts_4 = df4['z_spec']
 index_list_size_vandels = df4.set_index(k.decode('utf-8') for k in df4['IDs'])
 
-from spectral_indices import calc_indices
+"""
+#from spectral_indices import calc_indices
 IDs = df4['IDs']
 #print('no. of vandels passive gals in this mass range: ', len(IDs))
-#IDs = [i.decode('utf-8') for i in df4['IDs']]
+IDs = [i.decode('utf-8') for i in df4['IDs']]
 #print('IDs of vandels passive gals in this mass range: ', IDs)
-#index_list = df4.set_index(i.decode('utf-8') for i in df4['IDs'])
-#spec_ind_df = calc_indices(IDs, index_list)
+index_list = df4.set_index(i.decode('utf-8') for i in df4['IDs'])
+spec_ind_df = calc_indices(IDs, index_list)
 #print(spec_ind_df)
 
 spec_inds = Table.read("spectral_indices"+str(len(stricter_sizes))+".fits").to_pandas()
@@ -110,11 +144,11 @@ df_si = pd.DataFrame(spec_inds)
 index_list_ind = df_si.set_index(s.decode('utf-8') for s in df_si['ID'])
 D4000_vandels = df_si['Dn4000']
 H_delta = df_si['EW(Hd)']
-
+"""
 
 size_4 = np.array(np.log10(stricter_sizes))
 index_4 = np.log10(stricter_sizes).index.to_list()
-merged_df = merged_df.groupby((merged_df['fast_lmass']>10.9) & (merged_df['fast_lmass']<=11.62) ).get_group(True)
+merged_df = merged_df.groupby((merged_df['fast_lmass']>10.5)&(merged_df['fast_lmass']<=11.62)).get_group(True)#& (merged_df['fast_lmass']<=11.62)
 #merged LEGA-C catalog with D4000 and sizes
 print(len(merged_df))
 Re_kpc = merged_df['galfit_re_kpc']
@@ -123,7 +157,7 @@ mass = merged_df['fast_lmass'].values
 d4000 = merged_df['LICK_D4000_N'].values
 ID_wu = merged_df['id']
 print(np.max(mass))
-input()
+
 merged_df.to_csv('merged_legac_cat.cat')
 
 #print(len(Re_kpc))
@@ -132,9 +166,9 @@ legac_std = np.nanstd(d4000)
 legac_mean = np.nanmean(d4000)
 legac_median = np.nanmedian(d4000)
 
-vandels_std  = np.nanstd(D4000_vandels)
-vandels_mean = np.nanmean(D4000_vandels)
-vandels_median = np.nanmedian(D4000_vandels)
+vandels_std  = np.nanstd(d4000_vandels)
+vandels_mean = np.nanmean(d4000_vandels)
+vandels_median = np.nanmedian(d4000_vandels)
 
 
 print('ALL OBJECTS: \n LEGA-C: \n std = ', legac_std , '\n mean = ', legac_mean, '\n median = ', legac_median,
@@ -165,14 +199,14 @@ for cvals2 in range(len(log_A_model)):
         best_c_vdw = c_vals2
 
 vandels_c_0_75 = best_c_vdw
-x = np.linspace(10.9, 11.62, len(Re_kpc))
+x = np.linspace(10.5, 11.62, len(Re_kpc))
 wu_new_relation = a * (x - 11) + b
 vdw_0_75 = vdw_relation(0.42, 0.71, x)
-
+x_v = np.linspace(10.2, 11.5, len(size_4))
 print(f'best c: {vandels_c_0_75}')
 vandels_0_75_relation = vdw_relation(vandels_c_0_75, 0.71, x)
 print(f'offset between vdw and vandels for z = 0.75 is:{np.round((0.42 - vandels_c_0_75),3)}')
-vandels_relation = vdw_relation(vandels_c_0_75, 0.71, np.linspace(10.3, 10.6, len(size_4)))
+vandels_relation = vdw_relation(vandels_c_0_75, 0.71, x_v)
 
 a, b = 0.51, 0.63
 a1, b1 = 0.55, 0.63
@@ -197,33 +231,44 @@ vandels_wu_b = best_b_wu
 
 print('vandels best b for wu ', vandels_wu_b)
 print('offset wu ', vandels_wu_b - b)
-input()
-x_van = np.linspace(10.9, 11.3, len(size_4))
-vandels_wu_relation = a*(x_van - 11) + vandels_wu_b
-
 """
+x_van = np.linspace(10.2, 11.5, len(size_4))
+vandels_wu_relation = a*(x_van - 11) + vandels_wu_b
+equation_vdw = '$\mathrm{log_{10}{(R_{e}/kpc)}}$ = ' + str(round(al,4)) + ' $\mathrm{log_{10}{(M*/((5 x 10^{10})M_{\odot}))}}$' ' + ' + str(round(vandels_c_0_75,4))
+equation_wu = '$\mathrm{log_{10}{(R_{e}/kpc)}}$ = ' + str(round(a,2)) + ' $\mathrm{log_{10}{(M*/M_{\odot})}}$' ' + ' + str(round(vandels_wu_b,2))
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize='small')
+plt.rc('ytick', labelsize='small')
 fig1, ax1 = plt.subplots(figsize=[16,10.5])
 #im1 = ax1.scatter(mass, np.log10(Re_kpc), s=300, c=d4000, cmap=plt.cm.magma, marker='o', linewidth=0.5, alpha = 0.8)
-im2 = ax1.scatter(np.array(stricter_masses), size_4, s=300, c=D4000_vandels, cmap=plt.cm.magma, marker='o', linewidth=0.5, label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
+#ax1.scatter(np.array(stricter_masses), size_4, s = 100, c = 'purple', marker = 'o', ec = 'k', label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
+im2 = ax1.scatter(np.array(stricter_masses), size_4, s=300, c=d4000_vandels,  vmin=1., vmax=1.9,  cmap=plt.cm.magma, marker='o', linewidth=0.5)#, label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
 cbar1 = fig1.colorbar(im2, ax=ax1)
+
 cbar1.set_label('D$_{n}$4000', size=18)
 #ax1.plot(x, wu_new_relation, 'midnightblue', lw = 2.5, label= 'Wu et al. 2018 $z \sim$ 0.7')
 #ax1.plot(x, wu_relation2, 'r', lw = 2.5, label= 'Wu et al. 2018 $z \sim$ 0.7 (2)')
-#ax1.scatter(np.array(stricter_masses), size_4, s = 200, c = 'r', marker = 'o', ec = 'k', label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
-#ax1.plot(x, vdw_0_75, 'grey', lw = 2.5, label=f'van der Wel et al. 2014 $z$ = 0.75 ETG \n relation')
-ax1.plot(x_van, vandels_wu_relation, 'r' ,lw = 2.5,  label= f'VANDELS offset ({np.round(vandels_wu_b -b,3)} dex) Wu et al. 2018 relation ($z$ = 0.75)')
+#ax1.scatter(np.array(stricter_masses), size_4, s = 100, c = 'purple', marker = 'o', ec = 'k', label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
+#ax1.plot(x_v, vandels_relation, 'k', lw = 2.5, label=f'van der Wel et al. 2014 $z$ = 0.75 ETG \n relation')
+ax1.plot(x_v, vandels_relation, 'k', lw = 2.5, label=equation_vdw)
+
+#ax1.plot(x_van, vandels_wu_relation, 'r' ,lw = 2.5,  label= f'VANDELS offset ({np.round(vandels_wu_b -b,3)} dex) \n Wu et al. 2018 relation ($z$ = 0.75)')
+ax1.plot(x_van, vandels_wu_relation, 'r' ,lw = 2.5,  label= equation_wu)
+
 ax1.set_xlabel('$\mathrm{log_{10}{(M*/M_{\odot})}}$', size = 18)
 ax1.set_ylabel('$\mathrm{log_{10}{(R_{e}/kpc)}}$', size = 18)
 plt.xticks(fontsize=13)
 plt.yticks(fontsize=13)
 plt.legend(prop={'size': 12}, loc='lower right')
 plt.title('VANDELS log$_{10}$(Re) v log$_{10}$(M*/M$_{\odot}$)', size = 20)
-plt.xlim(10.1, 11.3)
-plt.ylim(-0.7, 1.5)
-plt.savefig('vandels_shifted_Wu.pdf')
+plt.xlim(10.25, 11.3)
+plt.ylim(-0.5, 1.25)
+#plt.clim(0., 2.0)
+
+#plt.savefig('vandels_shifted_Wu_newd4000.pdf')
 #plt.savefig('vandels_0_75offset_EWHd_cbar.pdf')
 plt.close()
-"""
+input()
 
 print("\n Finding stats for D4000 above + below (offset) WU RELATION z ~ 0.75 line for VANDELS galaxies:")
 print(np.max(size_4), np.max(stricter_masses))
@@ -242,13 +287,13 @@ IDs_below_vandels  = IDs[index_masked2_mass_v].str.decode("utf-8").str.rstrip().
 d4000_vandels_above = []
 mass_v_above = []
 for id1 in IDs_above_vandels:
-    d4000_vandels_above.append(index_list_ind.loc[id1, 'Dn4000'])
+    d4000_vandels_above.append(index_list_size_vandels.loc[id1, 'Dn4000'])
     mass_v_above.append(index_list_size_vandels.loc[str(id1), 'log10(M*/Msun)'])
 
 d4000_vandels_below = []
 mass_v_below = []
 for id2 in IDs_below_vandels:
-    d4000_vandels_below.append(index_list_ind.loc[str(id2), 'Dn4000'])
+    d4000_vandels_below.append(index_list_size_vandels.loc[str(id2), 'Dn4000'])
     mass_v_below.append(index_list_size_vandels.loc[str(id2), 'log10(M*/Msun)'])
 
 vandels_std_ab = np.nanstd(d4000_vandels_above)
@@ -264,7 +309,10 @@ print('VANDELS: \n ABOVE van der Wel z~0.75 relation: \n std = ', vandels_std_ab
 '\n BELOW offset van der Wel z~0.75 relation: \n std = ', vandels_std_be , '\n mean = ', vandels_mean_be, '\n median = ', vandels_median_be)
 
 print('END')
-input()
+"""
+a, b = 0.51, 0.63
+x = np.linspace(10.5, 11.62, len(Re_kpc))
+wu_new_relation = a * (x - 11) + b
 
 print("\n Finding stats for D4000 above + below Wu z~ 0.75 relation for LEGA-C galaxies:")
 mask_wu = (np.log10(Re_kpc)>wu_new_relation)#(np.log10(Re_kpc)>vdw_0_75)#
@@ -300,10 +348,41 @@ legac_mean_be = np.nanmean(d4000_i_below)
 legac_median_be = np.nanmedian(d4000_i_below)
 
 
-print('LEGA-C: \n ABOVE van Der Wel z~0.75 relation: \n std = ', legac_std_ab , '\n mean = ', legac_mean_ab, '\n median = ', legac_median_ab,
-'\n BELOW van Der Wel z~0.75 relation: \n std = ', legac_std_be , '\n mean = ', legac_mean_be, '\n median = ', legac_median_be)
+print('LEGA-C 10.5 - 11.62: \n ABOVE Wu z~0.75 relation: \n std = ', legac_std_ab , '\n mean = ', legac_mean_ab, '\n median = ', legac_median_ab,
+'\n BELOW Wu z~0.75 relation: \n std = ', legac_std_be , '\n mean = ', legac_mean_be, '\n median = ', legac_median_be)
+
+print('stacking above and below for log10(M*) > 10.5:')
+
+new_wavs = np.arange(3300, 6000, 2.5)
+def plot_stacks(spec_stack_above, spec_stack_below, len_ID_sa, len_ID_sb):
+    plt.rc('font', family='serif')
+    plt.rc('xtick', labelsize='medium')
+    plt.rc('ytick', labelsize='medium')
+    fig, (ax1) = plt.subplots(figsize = [15,5])#, gridspec_kw={'hspace': 0.25})
+    fig.suptitle('LEGA-C stacked spectra: 10.5 $<$ log$_{10}$(M*) $<$ 11.62', size = 20)#plt.figure(figsize=(20,8))
+    ax1.plot(new_wavs, spec_stack_above[0], color='r', lw=1., ls ='-', label = f' Above Wu et al. 2018 relation (N = {len_ID_sa})' )
+    ax1.plot(new_wavs, spec_stack_below[0], color='k', lw=1., label = f' Below Wu et al. 2018 relation (N = {len_ID_sb})')
+    ax1.fill_between(new_wavs, y1 = spec_stack_above[0] - spec_stack_above[1], y2 = spec_stack_above[0] + spec_stack_above[1], facecolor='r', alpha = 0.5)
+    ax1.fill_between(new_wavs, y1 = spec_stack_below[0] - spec_stack_below[1], y2 = spec_stack_below[0] + spec_stack_below[1], facecolor='k', alpha = 0.5)
+    ax1.set_xlabel("Wavelength ($\mathrm{\AA}$)", size=12)
+    ax1.set_ylabel("Flux $(10^{-18}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$" , size=12)#$(10^{-18}\ \mathrm{erg\ s^{-1}\ cm^{-2}\ \\AA{^{-1}})}$", size=12)
+    ax1.set_xlim(3350, 6500)
+    ax1.legend(fontsize=10, loc = 'upper left')
+    #ax1.set_title(r'Median spectroscopy stacks', size = 15)# excluding possible AGN (CDFS + UDS)')
+    plt.savefig('legac_stacks_10_5_11_6.pdf')
+
+import legac_stacking as lg
+
+legac_stacks_above = lg.legac_stacks(IDs_above_wu)
+legac_stacks_below = lg.legac_stacks(IDs_below_wu)
+print(legac_stacks_above)
+plot_stacks(legac_stacks_above, legac_stacks_below, len(IDs_above_wu), len(IDs_below_wu))
 
 
+
+
+
+input()
 
 """
 
@@ -333,4 +412,124 @@ plt.savefig('vdw_0_75_legac_wu_vandels_d4000_masscomplete.pdf')
 #plt.savefig('vandels_0_75offset_EWHd_cbar.pdf')
 plt.close()
 """
+
+
+vandels_size_cat = Table.read('VANDELS_size_d4000.fits').to_pandas()
+
+v_sizes = vandels_size_cat['Re_kpc']
+v_masses = vandels_size_cat['log10(M*/Msun)']
+
+v_errors = vandels_size_cat['Re_kpc_errs']
+
+v_model = np.arange(-8., -5.7, 0.001)
+print(v_model)
+print('vandels sizes', np.log10(np.array(v_sizes)), '\n', 'masses', np.array(v_masses))
+
+input()
+
+best_chiv = np.inf
+x_arr_v = np.array(v_masses)
+x = np.linspace(10.0, 11.3, len(v_sizes))
+from scipy.optimize import curve_fit
+
+def f(x, A, B): # this is your 'straight line' y=f(x)
+    y = A*x + B
+    return y
+
+popt, pcov = curve_fit(f, x_arr_v, v_sizes ) # your data x, y to fit
+print('scipy.optimise a', popt[0],'b',  popt[1])
+
+def best_fit_slope_and_intercept(xs,ys):
+    m = (((np.mean(xs)*np.mean(ys)) - np.mean(xs*ys)) /
+         ((np.mean(xs)*np.mean(xs)) - np.mean(xs*xs)))
+
+    b = np.mean(ys) - m*np.mean(xs)
+
+    return m, b
+
+m, b = best_fit_slope_and_intercept(x_arr_v,v_sizes)
+
+print('regression line:', 'm = ', np.log10(m),'b = ', np.log10(-b))
+
+model  = np.log10(m)*(x) - np.log10(-b)
+
+print(model)
+
+for bs in range(len(v_model)):
+    b_s = v_model[bs]
+    #new_v_model =
+    new_v_model = 0.56*(x_arr_v) + b_s
+    print(new_v_model)
+    #input()
+    diffs_v = new_v_model - np.log10(v_sizes)
+    print(diffs_v)
+    #print(y_model, '\n', np.log10(R_c))#(0.434*(Rc_errs/R_c)
+    chisqv = np.sum((diffs_v**2)/(4.34*(np.log10(v_errors)/np.log10(v_sizes))))
+
+    if chisqv < best_chiv:
+        best_chi_v = chisqv
+        best_b_v = b_s
+
+vandels_b_v = best_b_v
+print(vandels_b_v, best_chi_v)
+print(np.sort(v_sizes))
+x = np.linspace(10.0, 11.5, len(v_sizes))
+new_v_model = 0.56*(x) + (vandels_b_v)
+print(new_v_model)
+
+l_model = np.arange(-7.55, -5.55, 0.01)
+best_chil = np.inf
+for ls in range(len(l_model)):
+    l_s = l_model[ls]
+    #new_v_model =
+    new_l_model = 0.56*(mass) + l_s
+    #print(new_l_model)
+    #input()
+    diffs_l = new_l_model - np.log10(Re_kpc)
+    #print(diffs_l)
+    #print(y_model, '\n', np.log10(R_c))#(0.434*(Rc_errs/R_c)
+    chisql = np.sum((diffs_l**2)/(np.nanstd(Re_kpc)*1.25/np.sqrt(len(Re_kpc))))
+    #(4.34*(np.log10(v_errors)/np.log10(v_sizes))))
+
+    if chisql < best_chil:
+        best_chi_l = chisql
+        best_b_l = l_s
+
+legac_b = best_b_l
+print(legac_b, best_chi_l)
+print(np.sort(Re_kpc))
+legac_x = np.linspace(10.0, 11.8, len(Re_kpc))
+new_l_model = 0.56*(legac_x) + (legac_b)
+print(new_l_model)
+
+
+
+input()
+
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize='small')
+plt.rc('ytick', labelsize='small')
+fig1, ax1 = plt.subplots(figsize=[16,10.5])
+#ax1.scatter(mass, np.log10(Re_kpc), s=300, cmap=plt.cm.magma, marker='o', linewidth=0.5, alpha = 0.8)
+#im2 = ax1.scatter(np.array(stricter_masses), size_4, s=300, c=H_delta, cmap=plt.cm.magma, marker='o', linewidth=0.5, )# label  = f'VANDELS PASSIVE GALAXIES (N = {len(stricter_sizes)})')
+#cbar1 = fig1.colorbar(im1, ax=ax1)
+#cbar1.set_label('D$_{n}$4000', size=18)
+#ax1.plot(x, wu_new_relation, 'midnightblue', lw = 2.5, label= 'Wu et al. 2018 $z \sim$ 0.7')
+#ax1.plot(x, wu_relation2, 'r', lw = 2.5, label= 'Wu et al. 2018 $z \sim$ 0.7 (2)')
+ax1.scatter(np.array(mass), np.log10(Re_kpc), s = 200, c = 'r', marker = 'o', ec = 'k', label  = f'LEGA-C GALAXIES (N = {len(Re_kpc)})')
+ax1.plot(legac_x, new_l_model, 'grey', lw = 2.5, label = ('Model R$_e$(kpc) ='+ str("{:.2E}".format(10**(legac_b)))+'$\mathrm(M/M_{\odot})^{0.56}$'))
+#ax1.plot(x, model, 'r' ,lw = 2.5,  label= 'model scipy.optimise')
+ax1.set_xlabel('$\mathrm{log_{10}{(M*/M_{\odot})}}$', size = 18)
+ax1.set_ylabel('$\mathrm{log_{10}{(R_{e}/kpc)}}$', size = 18)
+plt.xticks(fontsize=13)
+plt.yticks(fontsize=13)
+plt.legend(prop={'size': 12}, loc='lower right')
+plt.title('LEGA-C log$_{10}$(Re) v log$_{10}$(M*/M$_{\odot}$)', size = 20)
+#plt.xlim(10.0, 11.8)
+#plt.ylim(-0.7, 3.5)
+plt.savefig('legac_0.56_relation.pdf')
+#plt.savefig('vandels_0_75offset_EWHd_cbar.pdf')
+plt.close()
+
+
 #732 objects classified as passive from the uvj_sfq =1 in table

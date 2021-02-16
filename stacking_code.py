@@ -84,6 +84,6 @@ def stacks(objects_list): #input array of redshifts for given list of objects
         median_spec[m]=np.nanmedian(spec_)
 
     med_spec_units = median_spec*med_new #test removing normalisations to see fluxes nh
-    stack_error = standev_err/np.sqrt(len(objects_list))
+    stack_error = standev_err/np.sqrt(len(objects_list)) #standard error on the stacks 
     #print(stack_error)
     return med_spec_units, stack_error*med_new #returns an array of the new median stacked fluxes
