@@ -38,8 +38,8 @@ def stack_ids(lower_lim, higher_lim, cat):
     #masses2 = np.array(masses2)
     arcsec_per_kpc = cosmo.arcsec_per_kpc_proper(redshifts_4)
 
-    Re_kpc_vandels = (df4['re'].values*u.arcsec)/arcsec_per_kpc
-    Re_kpc_errs_vandels = (df4['dre'].values*u.arcsec)/arcsec_per_kpc
+    Re_kpc_vandels = (df4['re_arcsecs'].values*u.arcsec)/arcsec_per_kpc
+    Re_kpc_errs_vandels = (df4['re_err_arcsecs'].values*u.arcsec)/arcsec_per_kpc
 
     Re_kpc_vandels = Re_kpc_vandels.value
     Re_kpc_errs_vandels = Re_kpc_errs_vandels.value
@@ -52,12 +52,14 @@ def stack_ids(lower_lim, higher_lim, cat):
     #index_4 = np.log10(stricter_sizes).index.to_list()
     x_array_4 = np.linspace(lower_lim, higher_lim, len(size_4))
     vdw_norm_model_4 = log_A + alpha*np.log10((10**x_array_4)/(5*10**10))
-    mask_4 = (size_4>vdw_norm_model_4)
-    mask1_4 = (size_4<vdw_norm_model_4)
+    a, b = 0.51, 0.44900000000000106
+    vandels_wu_relation = a * (x_array_4 - 11) + b
+    #mask_4 = (size_4>vdw_norm_model_4)
+    #mask1_4 = (size_4<vdw_norm_model_4)
 
-    #mask_v = (size_4>vandels_relation)
-    #mask1_v = (size_4<=vandels_wu_relation)
-    #mask1_v = (size_4<=vandels_relation)
+
+    mask_4 = (size_4>vandels_wu_relation)
+    mask1_4 = (size_4<vandels_wu_relation)
 
     #index_masked_mass_v = np.log10(stricter_sizes)[mask_v].index.tolist()
     index_masked_mass_v = np.where(mask_4 ==True)
@@ -160,9 +162,9 @@ def plot_stacks(spec_stack_above, spec_stack_below, len_ID_sa, len_ID_sb):
     plt.rc('xtick', labelsize='medium')
     plt.rc('ytick', labelsize='medium')
     fig, (ax1) = plt.subplots(figsize = [20,6])#, gridspec_kw={'hspace': 0.25})
-    fig.suptitle('Spectroscopy median stacks: 10.75 $<$ log$_{10}$(M*) $\leq$ 11.3', size = 20)#plt.figure(figsize=(20,8))
-    ax1.plot(new_wavs, spec_stack_above[0]*10**18, color='r', lw=1., ls ='-', label = f' Above van der Wel relation (N = {len_ID_sa})' )
-    ax1.plot(new_wavs, spec_stack_below[0]*10**18, color='k', lw=1., label = f' Below van der Wel relation (N = {len_ID_sb})')
+    fig.suptitle('Spectroscopy median stacks: 10.7 $<$ log$_{10}$(M*) $\leq$ 11.2', size = 20)#plt.figure(figsize=(20,8))
+    ax1.plot(new_wavs, spec_stack_above[0]*10**18, color='r', lw=1., ls ='-', label = f' Above Wu et al. relation (N = {len_ID_sa})' )
+    ax1.plot(new_wavs, spec_stack_below[0]*10**18, color='k', lw=1., label = f' Below Wu et al. relation (N = {len_ID_sb})')
     ax1.fill_between(new_wavs, y1 = spec_stack_above[0]*10**18 - spec_stack_above[1]*10**18, y2 = spec_stack_above[0]*10**18 + spec_stack_above[1]*10**18, facecolor='r', alpha = 0.5)
     ax1.fill_between(new_wavs, y1 = spec_stack_below[0]*10**18 - spec_stack_below[1]*10**18, y2 = spec_stack_below[0]*10**18 + spec_stack_below[1]*10**18, facecolor='k', alpha = 0.5)
     ax1.set_xlabel("Wavelength ($\mathrm{\AA}$)", size=12)
@@ -170,9 +172,10 @@ def plot_stacks(spec_stack_above, spec_stack_below, len_ID_sa, len_ID_sb):
     ax1.set_xlim(2350, 4240)
     ax1.legend(fontsize=10, loc = 'upper left')
     ax1.set_title(r'Median spectroscopy stacks', size = 15)# excluding possible AGN (CDFS + UDS)')
-    plt.savefig('spec_stacks_10._75_11_3_norm_units_check.pdf')
+    plt.savefig('NEW84_spec_stacks_WUrel_10_7_11_2_real_units_check.pdf')
 
-cat3 = Table.read("/Users/Important_Tables_PhD_Project/NEW_passive_uvj_sizes_d4000.fits").to_pandas()
+#cat3 = Table.read("/Users/Important_Tables_PhD_Project/NEW_passive_uvj_sizes_d4000.fits").to_pandas()
+cat3 = Table.read("/Users/Important_Tables_PhD_Project/NEW_uvj_84_sizes_d4000.fits").to_pandas()
 IDs = cat3['new_id']
 #DA5A86 pink
 #5A86DA blue
@@ -186,7 +189,7 @@ IDs = cat3['new_id']
 #109966
 #991043
 #orange = #F44336
-IDs_above, IDs_below = stack_ids(10.75, 11.3, cat3)
+IDs_above, IDs_below = stack_ids(10.7, 11.2, cat3)
 
 print(IDs_above, IDs_below)
 
@@ -252,4 +255,4 @@ plt.close()
 #plt.savefig('test_phot_stack_errors_dispersion_10_5_11_norms_2.pdf')
 """
 plot_stacks(spec_ab, spec_be, len(IDs_above), len(IDs_below))
-plot_stacks_single(spec_ab, spec_be, len(IDs_above), len(IDs_below), phot_ab[0], phot_be[0],phot_ab[1], phot_be[1], len(IDs_above), len(IDs_below), 'phot_spec_stacks_10_75_11_3_redblack_realunits')
+#plot_stacks_single(spec_ab, spec_be, len(IDs_above), len(IDs_below), phot_ab[0], phot_be[0],phot_ab[1], phot_be[1], len(IDs_above), len(IDs_below), 'phot_spec_stacks_10_75_11_3_redblack_realunits')
