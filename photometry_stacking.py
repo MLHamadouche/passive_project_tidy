@@ -61,6 +61,9 @@ eff_wavs = calc_eff_wavs(filt_curves)
  # 8084.3513428,   9049.08564392,  10585.0870973,
  #12516.25874447, 15391.40826974,  21576.74743872,
  #35572.60461226, 45048.50974132]
+all_passive = Table.read("/Users/Important_Tables_PhD_Project/NEW_VANDELS_passive_UVJ_inc_agn_inds.fits").to_pandas()
+df = pd.DataFrame(all_passive)
+ID_ = df.set_index(s.rstrip().decode('utf-8') for s in df['new_id'])
 
 def stacks_phot(objects_list):
 

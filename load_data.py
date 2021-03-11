@@ -271,68 +271,37 @@ def load_vandels_both(ID_):
 
 def load_legac_spec(ID):
         #lega_c_catalog = Table.read("legac_dr2_cat.fits").to_pandas()
-        lega_c = pd.read_table("/Users/massissiliahamadouche/Downloads/legac_team2018-02-16.cat", delimiter = ' ', skiprows = [i for i in range(1,129)])
+        #lega_c = pd.read_table("/Users/massissiliahamadouche/Downloads/legac_team2018-02-16.cat", delimiter = ' ', skiprows = [i for i in range(1,129)])
         #print(len(lega_c))
-        df = pd.DataFrame(lega_c)
+        #df = pd.DataFrame(lega_c)
         #print(df)
-        #df = pd.DataFrame(lega_c_catalog)
-        #print('M'+str(df['mask'].values[0])+'_'+ str(df['id'].values[0]))
-        #index_list = df.set_index('M'+str(df['mask'])+'_'+ str(df['id']))
-        #df['SPECT_ID'] = df['SPECT_ID'].str.decode('utf-8')
-        #print(index_list)
-        spec_file = 'M'+str(df['mask'].values[0])+'_'+ str(df['id'].values[0])
-        #spec_file = index_list.loc[ID, ['SPECT_ID']].str.decode('utf-8')
 
         #print(spec_file)
         #spec_file = spec_file.values[0]
         #print(spec_file)#.values[0])
-        globpath1 = os.path.join('/Users/massissiliahamadouche/Downloads/spectraDR/', '*.fits')
+        #globpath1 = os.path.join('/Users/massissiliahamadouche/Downloads/spectraDR/', '*.fits')
         #print(globpath)
-        filelist1 = glob(globpath1)
-        path = '/Users/massissiliahamadouche/Downloads/spectraDR/'
+        #filelist1 = glob(globpath1)
+        #path = '/Users/massissiliahamadouche/Downloads/spectraDR/'
         #print(path+'legac_'+spec_file.strip()+'_v2.0.fits')
 
+        path = glob('/Users/massissiliahamadouche/Downloads/spectraDR/*' + str(int(ID)) + '*.fits')[0]
+        hdulist = fits.open(path)
+        table = Table(hdulist[1].data)
 
-        for j in range(len(filelist1)):
-            if path+'legac_'+spec_file.strip()+'_v2.0.fits' in filelist1[j]:
-                hdulist = fits.open(path+'legac_'+spec_file.strip()+'_v2.0.fits')
-                #print(hdulist)
-                table = Table(hdulist[1].data)
-                #print(table)
-                wavs = table['WAVE'].data[0]
-                flux = table['FLUX'].data[0]
-                flux_errs= table['ERR'].data[0]
-                spectrum= np.c_[wavs, flux, flux_errs]
+        wavs = table['WAVE'].data[0]
+        flux = table['FLUX'].data[0]
+        flux_errs= table['ERR'].data[0]
+        spectrum = np.c_[wavs, flux, flux_errs]
 
+        for i in range(len(spectrum)):
+            if (spectrum[i,1] == 0.) or (spectrum[i, 2] <= 0.):
+                spectrum[i,1] = 0.
+                spectrum[i,2] =  np.float(9.9*10**99.)
+            #print(spectrum[i][1])
         return spectrum
 
-IDs = [126153]
+#IDs = 126153
 
-#print(globpath1)
-# glob searches through directories similar to the Unix shell
-"""
-globpath1 = os.path.join('/Users/massissiliahamadouche/Downloads/spectraDR/', '*.fits')
-filelist2 = glob(globpath1)
-np.set_printoptions(threshold=np.inf)
-#print(len(filelist2))
-hdulist = fits.open(filelist2[0])
-#print(hdulist[0].header)
-data = hdulist[0].header
-#print(data)
-table = Table(hdulist[1].data)
-#print(table)
-wavs = table['WAVE'].data[0]
-flux = table['FLUX'].data[0]
-flux_errs= table['ERR'].data[0]
-print(flux)
 
-plt.plot(wavs/(1+0.6823), flux)
-plt.show()
-"""
-
-#119945, 164459, 139221, 206616, 210716
-#start = time.time()
-#spec = load_legac_spec(IDs)
-#print(spec)
-#end = time.time()
-#print( end - start)
+#print(load_legac_spec(IDs))
